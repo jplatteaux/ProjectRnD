@@ -1,0 +1,2024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PetFriend - Virtual Pet Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --color-bg-dark: #0a0e27;
+    --color-bg-gradient-start: #1a1f3a;
+    --color-bg-gradient-end: #0d1129;
+    --color-panel: #1e2447;
+    --color-panel-light: #252b52;
+    --color-accent-blue: #00d4ff;
+    --color-accent-purple: #8b5cf6;
+    --color-accent-yellow: #ffd600;
+    --color-accent-green: #00ff88;
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #a8b3cf;
+    --color-border: #3d4466;
+    --color-border-bright: #5865f2;
+    --spacing-xs: 8px;
+    --spacing-sm: 12px;
+    --spacing-md: 20px;
+    --spacing-lg: 28px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.3);
+    --shadow-glow-strong: 0 0 30px rgba(0, 212, 255, 0.5);
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes floatingParticle {
+    0%, 100% { transform: translateY(0) translateX(0); opacity: 0.3; }
+    50% { transform: translateY(-20px) translateX(10px); opacity: 0.6; }
+}
+
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 10px rgba(0, 212, 255, 0.4), inset 0 1px 0 rgba(255,255,255,0.1); }
+    50% { box-shadow: 0 0 25px rgba(0, 212, 255, 0.7), inset 0 1px 0 rgba(255,255,255,0.2); }
+}
+
+@keyframes buttonBounce {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+@keyframes cardHoverLift {
+    0% { transform: translateY(0) rotateZ(0deg); }
+    100% { transform: translateY(-8px) rotateZ(-2deg); }
+}
+
+body {
+    font-family: 'Teko', 'Impact', 'Arial Black', sans-serif;
+    background: linear-gradient(135deg, var(--color-bg-gradient-start), var(--color-bg-gradient-end));
+    background-size: 200% 200%;
+    animation: gradientShift 15s ease infinite;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--spacing-md);
+    overflow-x: hidden;
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(0,212,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    top: 10%;
+    left: 10%;
+    animation: floatingParticle 8s ease-in-out infinite;
+    pointer-events: none;
+}
+
+body::after {
+    content: '';
+    position: fixed;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    bottom: 20%;
+    right: 15%;
+    animation: floatingParticle 10s ease-in-out infinite 2s;
+    pointer-events: none;
+}
+
+.game-container {
+    background: rgba(30, 36, 71, 0.95);
+    border-radius: var(--radius-lg);
+    border: 3px solid var(--color-border-bright);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8),
+                0 0 40px rgba(88, 101, 242, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    max-width: 1200px;
+    width: 100%;
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.game-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--color-accent-blue), var(--color-accent-purple), var(--color-accent-blue));
+    background-size: 200% 100%;
+    animation: gradientShift 3s linear infinite;
+}
+
+h1 {
+    background: linear-gradient(135deg, #1a1f3a 0%, #252b52 100%);
+    border-bottom: 3px solid var(--color-border-bright);
+    padding: var(--spacing-md) var(--spacing-lg);
+    text-align: center;
+    color: var(--color-text-primary);
+    font-size: 3rem;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-shadow: 0 2px 10px rgba(0, 212, 255, 0.5),
+                 0 0 30px rgba(0, 212, 255, 0.3),
+                 2px 2px 0 rgba(0, 0, 0, 0.8);
+    position: relative;
+}
+
+h1::before {
+    content: '🎮';
+    margin-right: var(--spacing-sm);
+}
+
+h1::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 3px;
+    background: var(--color-accent-yellow);
+    box-shadow: 0 0 10px var(--color-accent-yellow);
+}
+
+.main-content {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+}
+
+/* Pet Area */
+.pet-area {
+    background: linear-gradient(135deg, rgba(37, 43, 82, 0.6), rgba(30, 36, 71, 0.8));
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    border: 2px solid var(--color-border);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    position: relative;
+}
+
+/* Stats */
+.pet-stats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.stat {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background: rgba(10, 14, 39, 0.6);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--color-border);
+}
+
+.stat-label {
+    font-weight: 900;
+    min-width: 90px;
+    color: var(--color-text-primary);
+    font-size: 1.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.stat-label::before {
+    content: '▶ ';
+    color: var(--color-accent-blue);
+}
+
+.stat-bar {
+    flex: 1;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid var(--color-border);
+    position: relative;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.stat-bar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.stat-fill {
+    height: 100%;
+    transition: width 0.5s ease;
+    position: relative;
+    box-shadow: 0 0 10px currentColor;
+}
+
+.hunger-bar {
+    background: linear-gradient(90deg, #ff006e 0%, #ff4d94 100%);
+}
+
+.happiness-bar {
+    background: linear-gradient(90deg, #00d4ff 0%, #00ffcc 100%);
+}
+
+.energy-bar {
+    background: linear-gradient(90deg, #00ff88 0%, #7cff00 100%);
+}
+
+.stat-fill.low {
+    background: linear-gradient(90deg, #ff0000 0%, #ff4444 100%) !important;
+    animation: pulseGlow 1s ease-in-out infinite;
+}
+
+span[id$="Value"] {
+    font-size: 1.4rem;
+    color: var(--color-text-primary);
+    font-weight: 900;
+    min-width: 50px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8),
+                 0 0 10px currentColor;
+}
+
+/* Pet Display */
+.pet-display {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    position: relative;
+    border-radius: var(--radius-md);
+    background: radial-gradient(ellipse at center, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+}
+
+.pet-display.drag-over {
+    background: radial-gradient(ellipse at center, rgba(0, 212, 255, 0.3) 0%, transparent 70%);
+    animation: pulseGlow 0.5s ease-in-out;
+}
+
+#petCanvas {
+    width: 100%;
+    max-width: 400px;
+    height: 350px;
+    cursor: grab;
+    margin-bottom: var(--spacing-xs);
+    border-radius: var(--radius-md);
+    border: 3px solid var(--color-border);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+#petCanvas:active {
+    cursor: grabbing;
+}
+
+#petCanvas.drag-over {
+    border-color: var(--color-accent-blue);
+    box-shadow: 0 8px 20px rgba(0, 212, 255, 0.6),
+                0 0 40px rgba(0, 212, 255, 0.4);
+}
+
+.pet-name {
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--color-text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-shadow: 0 2px 10px rgba(0, 212, 255, 0.5),
+                 0 0 20px rgba(0, 212, 255, 0.3),
+                 2px 2px 0 rgba(0, 0, 0, 0.8);
+    margin-top: var(--spacing-xs);
+}
+
+.pet-message {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: linear-gradient(135deg, rgba(30, 36, 71, 0.9), rgba(37, 43, 82, 0.9));
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--color-border-bright);
+    font-size: 1.2rem;
+    color: var(--color-text-primary);
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.pet-message.show {
+    opacity: 1;
+    animation: buttonBounce 0.3s ease;
+}
+
+/* Pet Collection */
+.pet-collection {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm);
+    background: rgba(10, 14, 39, 0.6);
+    border-radius: var(--radius-md);
+    border: 2px solid var(--color-border);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.pet-collection h3 {
+    margin: 0 0 var(--spacing-sm) 0;
+    font-size: 1.1rem;
+    color: var(--color-accent-yellow);
+    text-align: center;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8),
+                 0 0 10px rgba(255, 214, 0, 0.5);
+}
+
+.pet-collection-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--spacing-xs);
+}
+
+.pet-thumbnail {
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, rgba(30, 36, 71, 0.8), rgba(37, 43, 82, 0.8));
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    overflow: hidden;
+    position: relative;
+    border: 3px solid var(--color-border);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.pet-thumbnail:hover {
+    transform: translateY(-4px) scale(1.05);
+    border-color: var(--color-border-bright);
+    box-shadow: 0 8px 20px rgba(88, 101, 242, 0.5);
+}
+
+.pet-thumbnail.active {
+    border-color: var(--color-accent-blue);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+    animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.pet-thumbnail-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Food Area */
+.food-area {
+    background: linear-gradient(135deg, rgba(37, 43, 82, 0.6), rgba(30, 36, 71, 0.8));
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    border: 2px solid var(--color-border);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.food-area h2 {
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-md);
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-shadow: 0 2px 10px rgba(0, 212, 255, 0.5),
+                 0 0 20px rgba(0, 212, 255, 0.3),
+                 2px 2px 0 rgba(0, 0, 0, 0.8);
+}
+
+.food-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.food-item {
+    background: linear-gradient(135deg, rgba(30, 36, 71, 0.9), rgba(37, 43, 82, 0.9));
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm);
+    text-align: center;
+    cursor: grab;
+    transition: all 0.3s ease;
+    border: 3px solid;
+    border-color: var(--color-border-bright);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    position: relative;
+}
+
+.food-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    pointer-events: none;
+}
+
+.food-item:nth-child(1) { border-color: #00d4ff; }
+.food-item:nth-child(2) { border-color: #8b5cf6; }
+.food-item:nth-child(3) { border-color: #ffd600; }
+.food-item:nth-child(4) { border-color: #00ff88; }
+.food-item:nth-child(5) { border-color: #ff006e; }
+.food-item:nth-child(6) { border-color: #ff4d00; }
+.food-item:nth-child(7) { border-color: #00ffcc; }
+.food-item:nth-child(8) { border-color: #ff00ff; }
+
+.food-item.dragging {
+    opacity: 0.7;
+    cursor: grabbing;
+    transform: scale(1.1) rotate(5deg);
+    z-index: 1000;
+}
+
+.food-item.drag-clone {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.9;
+    transform: scale(1.2);
+}
+
+.food-item:hover {
+    animation: cardHoverLift 0.2s forwards;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8),
+                0 0 30px currentColor;
+}
+
+.food-item:active {
+    transform: translateY(-4px) scale(1.02);
+}
+
+.food-canvas {
+    width: 100%;
+    height: 80px;
+    margin-bottom: var(--spacing-xs);
+    pointer-events: none;
+}
+
+.food-name {
+    font-weight: 900;
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.food-effect {
+    font-size: 0.9rem;
+    color: var(--color-text-primary);
+    background: rgba(0, 0, 0, 0.5);
+    padding: 4px 10px;
+    border-radius: 12px;
+    display: inline-block;
+    font-weight: 700;
+    border: 2px solid currentColor;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.action-btn {
+    color: white;
+    border: none;
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6);
+}
+
+.action-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+#playBtn {
+    background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
+    border: 3px solid #00ff88;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8),
+                 0 0 10px rgba(0, 255, 136, 0.5);
+}
+
+#playBtn::before {
+    content: '🎮 ';
+}
+
+#playBtn:hover {
+    animation: buttonBounce 0.3s ease infinite;
+    box-shadow: 0 8px 25px rgba(0, 255, 136, 0.6),
+                0 0 40px rgba(0, 255, 136, 0.4);
+    transform: translateY(-2px);
+}
+
+#playBtn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+#sleepBtn {
+    background: linear-gradient(135deg, rgba(30, 36, 71, 0.9), rgba(37, 43, 82, 0.9));
+    border: 3px solid var(--color-border-bright);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+#sleepBtn::before {
+    content: '💤 ';
+}
+
+#sleepBtn:hover {
+    background: linear-gradient(135deg, rgba(37, 43, 82, 0.9), rgba(30, 36, 71, 0.9));
+    border-color: var(--color-accent-purple);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+    transform: translateY(-1px);
+}
+
+#sleepBtn:active {
+    transform: translateY(0);
+}
+
+/* Animations */
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    25% { transform: translateY(-20px); }
+    50% { transform: translateY(-10px); }
+    75% { transform: translateY(-15px); }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    50% { transform: translateX(10px); }
+    75% { transform: translateX(-5px); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    body {
+        padding: var(--spacing-sm);
+        align-items: flex-start;
+    }
+
+    .game-container {
+        margin: var(--spacing-sm) 0;
+    }
+
+    h1 {
+        font-size: 2rem;
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .main-content {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-md);
+    }
+
+    .pet-area, .food-area {
+        padding: var(--spacing-sm);
+    }
+
+    .pet-display {
+        min-height: 300px;
+    }
+
+    #petCanvas {
+        max-width: 100%;
+        height: 280px;
+    }
+
+    .pet-name {
+        font-size: 1.5rem;
+    }
+
+    .pet-message {
+        font-size: 1rem;
+        padding: var(--spacing-xs) var(--spacing-sm);
+        min-height: 44px;
+    }
+
+    .pet-collection {
+        padding: var(--spacing-xs);
+    }
+
+    .stat-label {
+        min-width: 70px;
+        font-size: 1.1rem;
+    }
+
+    .stat-bar {
+        height: 20px;
+    }
+
+    .food-area h2 {
+        font-size: 1.5rem;
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .food-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-xs);
+    }
+
+    .food-item {
+        padding: var(--spacing-xs);
+    }
+
+    .food-canvas {
+        height: 70px;
+    }
+
+    .food-name {
+        font-size: 1rem;
+    }
+
+    .food-effect {
+        font-size: 0.75rem;
+    }
+
+    .action-btn {
+        padding: var(--spacing-sm);
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    #petCanvas {
+        height: 240px;
+    }
+
+    .food-canvas {
+        height: 60px;
+    }
+
+    .pet-collection-grid {
+        gap: 6px;
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🐕 PetFriend</h1>
+
+        <div class="main-content">
+            <div class="pet-area">
+                <div class="pet-stats">
+                    <div class="stat">
+                        <span class="stat-label">Hunger:</span>
+                        <div class="stat-bar">
+                            <div class="stat-fill hunger-bar" id="hungerBar"></div>
+                        </div>
+                        <span id="hungerValue">100</span>%
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Happiness:</span>
+                        <div class="stat-bar">
+                            <div class="stat-fill happiness-bar" id="happinessBar"></div>
+                        </div>
+                        <span id="happinessValue">100</span>%
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Energy:</span>
+                        <div class="stat-bar">
+                            <div class="stat-fill energy-bar" id="energyBar"></div>
+                        </div>
+                        <span id="energyValue">100</span>%
+                    </div>
+                </div>
+
+                <div class="pet-display" id="petDisplay">
+                    <canvas id="petCanvas"></canvas>
+                    <div class="pet-name">Buddy</div>
+                    <div class="pet-message" id="petMessage"></div>
+                </div>
+
+                <div class="pet-collection">
+                    <h3>Choose Your Pet</h3>
+                    <div class="pet-collection-grid">
+                        <div class="pet-thumbnail active" data-color="brown" data-name="Buddy">
+                            <canvas class="pet-thumbnail-canvas" id="petThumb0"></canvas>
+                        </div>
+                        <div class="pet-thumbnail" data-color="golden" data-name="Goldie">
+                            <canvas class="pet-thumbnail-canvas" id="petThumb1"></canvas>
+                        </div>
+                        <div class="pet-thumbnail" data-color="black" data-name="Shadow">
+                            <canvas class="pet-thumbnail-canvas" id="petThumb2"></canvas>
+                        </div>
+                        <div class="pet-thumbnail" data-color="white" data-name="Snow">
+                            <canvas class="pet-thumbnail-canvas" id="petThumb3"></canvas>
+                        </div>
+                        <div class="pet-thumbnail" data-color="gray" data-name="Smokey">
+                            <canvas class="pet-thumbnail-canvas" id="petThumb4"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="food-area">
+                <h2>Food Items</h2>
+                <div class="food-grid">
+                    <div class="food-item" data-food="bone" data-hunger="20" data-happiness="10">
+                        <canvas class="food-canvas" id="foodBone"></canvas>
+                        <div class="food-name">Bone</div>
+                        <div class="food-effect">+20 Hunger</div>
+                    </div>
+                    <div class="food-item" data-food="meat" data-hunger="40" data-happiness="20">
+                        <canvas class="food-canvas" id="foodMeat"></canvas>
+                        <div class="food-name">Meat</div>
+                        <div class="food-effect">+40 Hunger</div>
+                    </div>
+                    <div class="food-item" data-food="cookie" data-hunger="15" data-happiness="30">
+                        <canvas class="food-canvas" id="foodCookie"></canvas>
+                        <div class="food-name">Cookie</div>
+                        <div class="food-effect">+30 Happy</div>
+                    </div>
+                    <div class="food-item" data-food="water" data-hunger="10" data-happiness="5">
+                        <canvas class="food-canvas" id="foodWater"></canvas>
+                        <div class="food-name">Water</div>
+                        <div class="food-effect">+10 Hunger</div>
+                    </div>
+                    <div class="food-item" data-food="fish" data-hunger="35" data-happiness="25">
+                        <canvas class="food-canvas" id="foodFish"></canvas>
+                        <div class="food-name">Fish</div>
+                        <div class="food-effect">+35 Hunger</div>
+                    </div>
+                    <div class="food-item" data-food="apple" data-hunger="25" data-happiness="15">
+                        <canvas class="food-canvas" id="foodApple"></canvas>
+                        <div class="food-name">Apple</div>
+                        <div class="food-effect">+25 Hunger</div>
+                    </div>
+                    <div class="food-item" data-food="cheese" data-hunger="30" data-happiness="20">
+                        <canvas class="food-canvas" id="foodCheese"></canvas>
+                        <div class="food-name">Cheese</div>
+                        <div class="food-effect">+30 Hunger</div>
+                    </div>
+                    <div class="food-item" data-food="ball" data-hunger="5" data-happiness="35">
+                        <canvas class="food-canvas" id="foodBall"></canvas>
+                        <div class="food-name">Ball</div>
+                        <div class="food-effect">+35 Happy</div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="action-btn" id="playBtn">🎾 Play</button>
+                    <button class="action-btn" id="sleepBtn">😴 Sleep</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+class Dog3D {
+    constructor(canvasId, colorScheme = 'brown') {
+        this.canvas = document.getElementById(canvasId);
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+        this.dog = null;
+        this.animationId = null;
+        this.currentEmotion = 'neutral';
+        this.tailRotation = 0;
+        this.tailSpeed = 0.05;
+        this.isInitialized = false;
+        this.colorScheme = colorScheme;
+
+        // Idle behavior properties
+        this.targetHeadRotation = 0;
+        this.currentHeadRotation = 0;
+        this.nextHeadLookTime = 0;
+        this.nextIdleJumpTime = 0;
+        this.isIdleJumping = false;
+        this.idleJumpProgress = 0;
+
+        // Camera rotation properties
+        this.isDragging = false;
+        this.previousMousePosition = { x: 0, y: 0 };
+        this.cameraRotationY = 0;
+        this.cameraRotationX = 0;
+        this.maxRotationY = Math.PI / 6; // 30 degrees
+        this.maxRotationX = Math.PI / 6; // 30 degrees
+        this.cameraDistance = 10;
+        this.cameraHeight = 3;
+
+        this.init();
+    }
+
+    getColors(scheme) {
+        const colorSchemes = {
+            brown: { main: 0x8B4513, light: 0xD2691E },
+            golden: { main: 0xDAA520, light: 0xFFD700 },
+            black: { main: 0x1C1C1C, light: 0x3C3C3C },
+            white: { main: 0xF5F5F5, light: 0xFFFFFF },
+            gray: { main: 0x808080, light: 0xA9A9A9 }
+        };
+        return colorSchemes[scheme] || colorSchemes.brown;
+    }
+
+    init() {
+        const width = this.canvas.clientWidth;
+        const height = this.canvas.clientHeight;
+
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x1a1f3a);
+
+        this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+        this.camera.position.set(0, 3, 10);
+        this.camera.lookAt(0, 2, 0);
+
+        this.renderer = new THREE.WebGLRenderer({
+            canvas: this.canvas,
+            antialias: true,
+            alpha: true
+        });
+        this.renderer.setSize(width, height);
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.shadowMap.enabled = true;
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        this.scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 10, 5);
+        directionalLight.castShadow = true;
+        this.scene.add(directionalLight);
+
+        this.createDog();
+        this.createGround();
+
+        window.addEventListener('resize', () => this.onWindowResize());
+        this.setupCameraControls();
+
+        this.isInitialized = true;
+        this.scheduleNextHeadLook();
+        this.scheduleNextIdleJump();
+        this.animate();
+    }
+
+    setupCameraControls() {
+        // Mouse controls
+        this.canvas.addEventListener('mousedown', (e) => {
+            this.isDragging = true;
+            this.previousMousePosition = {
+                x: e.clientX,
+                y: e.clientY
+            };
+        });
+
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (!this.isDragging) return;
+
+            const deltaX = e.clientX - this.previousMousePosition.x;
+            const deltaY = e.clientY - this.previousMousePosition.y;
+
+            this.cameraRotationY += deltaX * 0.005;
+            this.cameraRotationX += deltaY * 0.005;
+
+            // Clamp rotations
+            this.cameraRotationY = Math.max(-this.maxRotationY, Math.min(this.maxRotationY, this.cameraRotationY));
+            this.cameraRotationX = Math.max(-this.maxRotationX, Math.min(this.maxRotationX, this.cameraRotationX));
+
+            this.previousMousePosition = {
+                x: e.clientX,
+                y: e.clientY
+            };
+        });
+
+        this.canvas.addEventListener('mouseup', () => {
+            this.isDragging = false;
+        });
+
+        this.canvas.addEventListener('mouseleave', () => {
+            this.isDragging = false;
+        });
+
+        // Touch controls
+        this.canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                this.isDragging = true;
+                this.previousMousePosition = {
+                    x: e.touches[0].clientX,
+                    y: e.touches[0].clientY
+                };
+                e.preventDefault();
+            }
+        });
+
+        this.canvas.addEventListener('touchmove', (e) => {
+            if (!this.isDragging || e.touches.length !== 1) return;
+
+            const deltaX = e.touches[0].clientX - this.previousMousePosition.x;
+            const deltaY = e.touches[0].clientY - this.previousMousePosition.y;
+
+            this.cameraRotationY += deltaX * 0.005;
+            this.cameraRotationX += deltaY * 0.005;
+
+            // Clamp rotations
+            this.cameraRotationY = Math.max(-this.maxRotationY, Math.min(this.maxRotationY, this.cameraRotationY));
+            this.cameraRotationX = Math.max(-this.maxRotationX, Math.min(this.maxRotationX, this.cameraRotationX));
+
+            this.previousMousePosition = {
+                x: e.touches[0].clientX,
+                y: e.touches[0].clientY
+            };
+
+            e.preventDefault();
+        });
+
+        this.canvas.addEventListener('touchend', () => {
+            this.isDragging = false;
+        });
+    }
+
+    scheduleNextHeadLook() {
+        const delay = 1000 + Math.random() * 2500; // 1-3.5 seconds
+        this.nextHeadLookTime = Date.now() + delay;
+    }
+
+    scheduleNextIdleJump() {
+        const delay = 2000 + Math.random() * 4000; // 2-6 seconds
+        this.nextIdleJumpTime = Date.now() + delay;
+    }
+
+    performHeadLook() {
+        const directions = [-0.6, 0, 0.6]; // left, center, right
+        this.targetHeadRotation = directions[Math.floor(Math.random() * directions.length)];
+        this.scheduleNextHeadLook();
+    }
+
+    startIdleJump() {
+        if (this.isIdleJumping || this.currentEmotion === 'happy') return;
+        this.isIdleJumping = true;
+        this.idleJumpProgress = 0;
+        this.scheduleNextIdleJump();
+    }
+
+    createDog() {
+        this.dog = new THREE.Group();
+
+        const colors = this.getColors(this.colorScheme);
+        const brownColor = colors.main;
+        const lightBrownColor = colors.light;
+        const blackColor = 0x000000;
+        const pinkColor = 0xFF69B4;
+
+        const bodyGeometry = new THREE.SphereGeometry(1, 32, 32);
+        const bodyMaterial = new THREE.MeshPhongMaterial({ color: brownColor });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.scale.set(1.5, 1.2, 1);
+        body.position.y = 1.5;
+        body.castShadow = true;
+        this.dog.add(body);
+
+        const headGeometry = new THREE.SphereGeometry(0.8, 32, 32);
+        const headMaterial = new THREE.MeshPhongMaterial({ color: brownColor });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.set(0, 2.5, 0.8);
+        head.castShadow = true;
+        this.dog.add(head);
+        this.head = head;
+
+        const snoutGeometry = new THREE.SphereGeometry(0.4, 32, 32);
+        const snoutMaterial = new THREE.MeshPhongMaterial({ color: lightBrownColor });
+        const snout = new THREE.Mesh(snoutGeometry, snoutMaterial);
+        snout.scale.set(0.8, 0.6, 1.2);
+        snout.position.set(0, 2.3, 1.4);
+        snout.castShadow = true;
+        this.dog.add(snout);
+
+        const noseGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+        const noseMaterial = new THREE.MeshPhongMaterial({ color: blackColor });
+        const nose = new THREE.Mesh(noseGeometry, noseMaterial);
+        nose.position.set(0, 2.35, 1.85);
+        this.dog.add(nose);
+
+        const earGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+        const earMaterial = new THREE.MeshPhongMaterial({ color: brownColor });
+
+        const leftEar = new THREE.Mesh(earGeometry, earMaterial);
+        leftEar.scale.set(0.6, 1.5, 0.3);
+        leftEar.position.set(-0.5, 3, 0.6);
+        leftEar.rotation.z = -0.3;
+        leftEar.castShadow = true;
+        this.dog.add(leftEar);
+
+        const rightEar = new THREE.Mesh(earGeometry, earMaterial);
+        rightEar.scale.set(0.6, 1.5, 0.3);
+        rightEar.position.set(0.5, 3, 0.6);
+        rightEar.rotation.z = 0.3;
+        rightEar.castShadow = true;
+        this.dog.add(rightEar);
+
+        const eyeGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+        const eyeMaterial = new THREE.MeshPhongMaterial({ color: blackColor });
+
+        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        leftEye.position.set(-0.25, 2.65, 1.3);
+        this.dog.add(leftEye);
+        this.leftEye = leftEye;
+
+        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        rightEye.position.set(0.25, 2.65, 1.3);
+        this.dog.add(rightEye);
+        this.rightEye = rightEye;
+
+        const legGeometry = new THREE.CylinderGeometry(0.2, 0.18, 1, 16);
+        const legMaterial = new THREE.MeshPhongMaterial({ color: brownColor });
+
+        const frontLeftLeg = new THREE.Mesh(legGeometry, legMaterial);
+        frontLeftLeg.position.set(-0.6, 0.5, 0.5);
+        frontLeftLeg.castShadow = true;
+        this.dog.add(frontLeftLeg);
+
+        const frontRightLeg = new THREE.Mesh(legGeometry, legMaterial);
+        frontRightLeg.position.set(0.6, 0.5, 0.5);
+        frontRightLeg.castShadow = true;
+        this.dog.add(frontRightLeg);
+
+        const backLeftLeg = new THREE.Mesh(legGeometry, legMaterial);
+        backLeftLeg.position.set(-0.6, 0.5, -0.5);
+        backLeftLeg.castShadow = true;
+        this.dog.add(backLeftLeg);
+
+        const backRightLeg = new THREE.Mesh(legGeometry, legMaterial);
+        backRightLeg.position.set(0.6, 0.5, -0.5);
+        backRightLeg.castShadow = true;
+        this.dog.add(backRightLeg);
+
+        const tailGeometry = new THREE.CylinderGeometry(0.15, 0.08, 1, 16);
+        const tailMaterial = new THREE.MeshPhongMaterial({ color: brownColor });
+        const tail = new THREE.Mesh(tailGeometry, tailMaterial);
+        tail.position.set(0, 1.8, -1.2);
+        tail.rotation.x = Math.PI / 3;
+        tail.castShadow = true;
+        this.dog.add(tail);
+        this.tail = tail;
+
+        this.dog.position.y = 0.5;
+        this.scene.add(this.dog);
+    }
+
+    createGround() {
+        const groundGeometry = new THREE.CircleGeometry(5, 32);
+        const groundMaterial = new THREE.MeshPhongMaterial({
+            color: 0xfafbfc,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.5
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        this.scene.add(ground);
+    }
+
+    animate() {
+        this.animationId = requestAnimationFrame(() => this.animate());
+
+        if (this.dog) {
+            const now = Date.now();
+
+            // Check for idle head look
+            if (now >= this.nextHeadLookTime && this.currentEmotion !== 'happy') {
+                this.performHeadLook();
+            }
+
+            // Smoothly rotate head towards target
+            const headLerpSpeed = 0.05;
+            this.currentHeadRotation += (this.targetHeadRotation - this.currentHeadRotation) * headLerpSpeed;
+            this.head.rotation.y = this.currentHeadRotation;
+
+            // Slowly rotate dog body left to right (-25 to +25 degrees)
+            const bodyRotation = Math.sin(now * 0.0005) * (25 * Math.PI / 180);
+            this.dog.rotation.y = bodyRotation;
+
+            // Check for idle jump
+            if (now >= this.nextIdleJumpTime && !this.isIdleJumping && this.currentEmotion !== 'happy') {
+                this.startIdleJump();
+            }
+
+            // Perform idle jump animation with squash/stretch
+            if (this.isIdleJumping) {
+                this.idleJumpProgress += 0.0125;
+
+                if (this.idleJumpProgress <= 1) {
+                    const progress = this.idleJumpProgress;
+
+                    if (progress < 0.2) {
+                        // Crouch phase
+                        const crouchProgress = progress / 0.2;
+                        this.dog.position.y = 0.5 - crouchProgress * 0.3;
+                        this.dog.scale.y = 1 - crouchProgress * 0.15;
+                        this.dog.scale.x = 1 + crouchProgress * 0.1;
+                        this.dog.scale.z = 1 + crouchProgress * 0.1;
+                    } else if (progress < 0.6) {
+                        // Jump up phase with stretch
+                        const jumpProgress = (progress - 0.2) / 0.4;
+                        const height = Math.sin(jumpProgress * Math.PI) * 1.2;
+                        this.dog.position.y = 0.2 + height;
+                        this.dog.scale.y = 0.85 + jumpProgress * 0.3;
+                        this.dog.scale.x = 1.1 - jumpProgress * 0.15;
+                        this.dog.scale.z = 1.1 - jumpProgress * 0.15;
+                    } else {
+                        // Landing phase with squash
+                        const landProgress = (progress - 0.6) / 0.4;
+                        const height = (1 - landProgress) * 1.2 * Math.sin((0.6) * Math.PI);
+                        this.dog.position.y = 0.2 + height;
+                        this.dog.scale.y = 1.15 - landProgress * 0.15;
+                        this.dog.scale.x = 0.95 + landProgress * 0.05;
+                        this.dog.scale.z = 0.95 + landProgress * 0.05;
+                    }
+                } else {
+                    // Reset to normal
+                    this.isIdleJumping = false;
+                    this.dog.position.y = 0.5;
+                    this.dog.scale.set(1, 1, 1);
+                }
+            } else if (this.currentEmotion === 'happy') {
+                // Happy emotion bounce
+                this.tailRotation += this.tailSpeed;
+                if (this.tailRotation > 0.5 || this.tailRotation < -0.5) {
+                    this.tailSpeed = -this.tailSpeed;
+                }
+                this.tail.rotation.z = this.tailRotation;
+
+                const bounce = Math.sin(Date.now() * 0.005) * 0.1;
+                this.dog.position.y = 0.5 + Math.abs(bounce);
+            } else {
+                // Neutral state
+                this.tailRotation = 0;
+                this.tail.rotation.z = 0;
+                if (!this.isIdleJumping) {
+                    this.dog.position.y = 0.5;
+                }
+            }
+
+            // Update camera position based on rotation
+            const x = this.cameraDistance * Math.sin(this.cameraRotationY) * Math.cos(this.cameraRotationX);
+            const y = this.cameraHeight + this.cameraDistance * Math.sin(this.cameraRotationX);
+            const z = this.cameraDistance * Math.cos(this.cameraRotationY) * Math.cos(this.cameraRotationX);
+
+            this.camera.position.set(x, y, z);
+            this.camera.lookAt(0, 2, 0);
+        }
+
+        this.renderer.render(this.scene, this.camera);
+    }
+
+    setEmotion(emotion) {
+        this.currentEmotion = emotion;
+
+        if (emotion === 'happy') {
+            this.leftEye.scale.set(1, 0.5, 1);
+            this.rightEye.scale.set(1, 0.5, 1);
+        } else if (emotion === 'sad') {
+            this.leftEye.scale.set(0.7, 0.7, 0.7);
+            this.rightEye.scale.set(0.7, 0.7, 0.7);
+        } else {
+            this.leftEye.scale.set(1, 1, 1);
+            this.rightEye.scale.set(1, 1, 1);
+        }
+
+        setTimeout(() => {
+            if (this.currentEmotion === emotion) {
+                this.currentEmotion = 'neutral';
+                this.leftEye.scale.set(1, 1, 1);
+                this.rightEye.scale.set(1, 1, 1);
+            }
+        }, 2000);
+    }
+
+    jump() {
+        if (!this.dog) return;
+
+        const startY = this.dog.position.y;
+        const jumpHeight = 1.5;
+        const duration = 500;
+        const startTime = Date.now();
+
+        const animateJump = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            const height = Math.sin(progress * Math.PI) * jumpHeight;
+            this.dog.position.y = startY + height;
+
+            if (progress < 1) {
+                requestAnimationFrame(animateJump);
+            } else {
+                this.dog.position.y = startY;
+            }
+        };
+
+        animateJump();
+    }
+
+    onWindowResize() {
+        const width = this.canvas.clientWidth;
+        const height = this.canvas.clientHeight;
+
+        this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(width, height);
+    }
+
+    destroy() {
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+        }
+        if (this.renderer) {
+            this.renderer.dispose();
+        }
+    }
+}
+
+class Food3D {
+    constructor(canvasId, foodType) {
+        this.canvas = document.getElementById(canvasId);
+        if (!this.canvas) return;
+
+        this.foodType = foodType;
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+        this.foodModel = null;
+        this.animationId = null;
+
+        this.init();
+    }
+
+    init() {
+        const width = this.canvas.clientWidth;
+        const height = this.canvas.clientHeight;
+
+        this.scene = new THREE.Scene();
+        this.scene.background = null;
+
+        this.camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+        this.camera.position.set(0, 0, 3);
+        this.camera.lookAt(0, 0, 0);
+
+        this.renderer = new THREE.WebGLRenderer({
+            canvas: this.canvas,
+            antialias: true,
+            alpha: true
+        });
+        this.renderer.setSize(width, height);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        this.scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(2, 2, 2);
+        this.scene.add(directionalLight);
+
+        this.createFood();
+        this.animate();
+    }
+
+    createFood() {
+        this.foodModel = new THREE.Group();
+
+        switch (this.foodType) {
+            case 'bone':
+                this.createBone();
+                break;
+            case 'meat':
+                this.createMeat();
+                break;
+            case 'cookie':
+                this.createCookie();
+                break;
+            case 'water':
+                this.createWater();
+                break;
+            case 'fish':
+                this.createFish();
+                break;
+            case 'apple':
+                this.createApple();
+                break;
+            case 'cheese':
+                this.createCheese();
+                break;
+            case 'ball':
+                this.createBall();
+                break;
+        }
+
+        this.scene.add(this.foodModel);
+    }
+
+    createBone() {
+        const boneColor = 0xF5E6D3;
+
+        const endGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+        const boneMaterial = new THREE.MeshPhongMaterial({ color: boneColor });
+
+        const leftEnd = new THREE.Mesh(endGeometry, boneMaterial);
+        leftEnd.scale.set(1, 0.6, 0.6);
+        leftEnd.position.x = -0.6;
+        this.foodModel.add(leftEnd);
+
+        const rightEnd = new THREE.Mesh(endGeometry, boneMaterial);
+        rightEnd.scale.set(1, 0.6, 0.6);
+        rightEnd.position.x = 0.6;
+        this.foodModel.add(rightEnd);
+
+        const middleGeometry = new THREE.CylinderGeometry(0.15, 0.15, 1.2, 16);
+        const middle = new THREE.Mesh(middleGeometry, boneMaterial);
+        middle.rotation.z = Math.PI / 2;
+        this.foodModel.add(middle);
+
+        this.foodModel.scale.set(1.2, 1.2, 1.2);
+    }
+
+    createMeat() {
+        const meatColor = 0x8B0000;
+        const fatColor = 0xFFE4E1;
+
+        const meatGeometry = new THREE.BoxGeometry(0.8, 0.5, 0.7);
+        const meatMaterial = new THREE.MeshPhongMaterial({ color: meatColor });
+        const meat = new THREE.Mesh(meatGeometry, meatMaterial);
+        this.foodModel.add(meat);
+
+        const fatGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+        const fatMaterial = new THREE.MeshPhongMaterial({ color: fatColor });
+
+        for (let i = 0; i < 3; i++) {
+            const fat = new THREE.Mesh(fatGeometry, fatMaterial);
+            fat.position.set(
+                (Math.random() - 0.5) * 0.6,
+                (Math.random() - 0.5) * 0.4,
+                0.35
+            );
+            fat.scale.set(0.8, 1.2, 0.6);
+            this.foodModel.add(fat);
+        }
+
+        this.foodModel.scale.set(1.3, 1.3, 1.3);
+    }
+
+    createCookie() {
+        const cookieColor = 0xD2691E;
+        const chipColor = 0x4B3621;
+
+        const cookieGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.15, 32);
+        const cookieMaterial = new THREE.MeshPhongMaterial({ color: cookieColor });
+        const cookie = new THREE.Mesh(cookieGeometry, cookieMaterial);
+        this.foodModel.add(cookie);
+
+        const chipGeometry = new THREE.SphereGeometry(0.08, 16, 16);
+        const chipMaterial = new THREE.MeshPhongMaterial({ color: chipColor });
+
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const radius = Math.random() * 0.3;
+            const chip = new THREE.Mesh(chipGeometry, chipMaterial);
+            chip.position.set(
+                Math.cos(angle) * radius,
+                0.08,
+                Math.sin(angle) * radius
+            );
+            chip.scale.set(1, 0.5, 1);
+            this.foodModel.add(chip);
+        }
+
+        this.foodModel.scale.set(1.5, 1.5, 1.5);
+    }
+
+    createWater() {
+        const glassColor = 0x87CEEB;
+        const waterColor = 0x4169E1;
+
+        const glassGeometry = new THREE.CylinderGeometry(0.35, 0.3, 0.8, 32);
+        const glassMaterial = new THREE.MeshPhongMaterial({
+            color: glassColor,
+            transparent: true,
+            opacity: 0.3,
+            shininess: 100
+        });
+        const glass = new THREE.Mesh(glassGeometry, glassMaterial);
+        glass.position.y = 0;
+        this.foodModel.add(glass);
+
+        const waterGeometry = new THREE.CylinderGeometry(0.32, 0.28, 0.7, 32);
+        const waterMaterial = new THREE.MeshPhongMaterial({
+            color: waterColor,
+            transparent: true,
+            opacity: 0.6,
+            shininess: 80
+        });
+        const water = new THREE.Mesh(waterGeometry, waterMaterial);
+        water.position.y = -0.03;
+        this.foodModel.add(water);
+
+        this.foodModel.scale.set(1.3, 1.3, 1.3);
+    }
+
+    createFish() {
+        const fishColor = 0xFF6347;
+        const finColor = 0xFF8C69;
+        const eyeColor = 0x000000;
+
+        const bodyGeometry = new THREE.SphereGeometry(0.4, 32, 32);
+        const fishMaterial = new THREE.MeshPhongMaterial({ color: fishColor });
+        const body = new THREE.Mesh(bodyGeometry, fishMaterial);
+        body.scale.set(1.5, 1, 0.8);
+        this.foodModel.add(body);
+
+        const tailGeometry = new THREE.ConeGeometry(0.3, 0.5, 16);
+        const tail = new THREE.Mesh(tailGeometry, fishMaterial);
+        tail.rotation.z = -Math.PI / 2;
+        tail.position.x = -0.6;
+        this.foodModel.add(tail);
+
+        const finGeometry = new THREE.ConeGeometry(0.15, 0.3, 16);
+        const finMaterial = new THREE.MeshPhongMaterial({ color: finColor });
+
+        const topFin = new THREE.Mesh(finGeometry, finMaterial);
+        topFin.rotation.x = Math.PI;
+        topFin.position.set(0, 0.4, 0);
+        this.foodModel.add(topFin);
+
+        const eyeGeometry = new THREE.SphereGeometry(0.08, 16, 16);
+        const eyeMaterial = new THREE.MeshPhongMaterial({ color: eyeColor });
+
+        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        leftEye.position.set(0.3, 0.1, 0.25);
+        this.foodModel.add(leftEye);
+
+        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        rightEye.position.set(0.3, 0.1, -0.25);
+        this.foodModel.add(rightEye);
+
+        this.foodModel.scale.set(1.4, 1.4, 1.4);
+    }
+
+    createApple() {
+        const appleColor = 0xFF0000;
+        const stemColor = 0x8B4513;
+        const leafColor = 0x228B22;
+
+        const appleGeometry = new THREE.SphereGeometry(0.45, 32, 32);
+        const appleMaterial = new THREE.MeshPhongMaterial({
+            color: appleColor,
+            shininess: 60
+        });
+        const apple = new THREE.Mesh(appleGeometry, appleMaterial);
+        apple.scale.set(1, 0.9, 1);
+        this.foodModel.add(apple);
+
+        const bottomGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+        const bottom = new THREE.Mesh(bottomGeometry, appleMaterial);
+        bottom.position.y = -0.4;
+        bottom.scale.set(0.8, 0.6, 0.8);
+        this.foodModel.add(bottom);
+
+        const stemGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 16);
+        const stemMaterial = new THREE.MeshPhongMaterial({ color: stemColor });
+        const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+        stem.position.y = 0.5;
+        stem.rotation.z = 0.2;
+        this.foodModel.add(stem);
+
+        const leafGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+        const leafMaterial = new THREE.MeshPhongMaterial({ color: leafColor });
+        const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+        leaf.scale.set(1.5, 0.3, 0.8);
+        leaf.position.set(0.1, 0.6, 0);
+        leaf.rotation.z = -0.5;
+        this.foodModel.add(leaf);
+
+        this.foodModel.scale.set(1.3, 1.3, 1.3);
+    }
+
+    createCheese() {
+        const cheeseColor = 0xFFDB58;
+        const holeColor = 0xFFE87C;
+
+        const cheeseGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 32, 1, false, 0, Math.PI * 1.5);
+        const cheeseMaterial = new THREE.MeshPhongMaterial({ color: cheeseColor });
+        const cheese = new THREE.Mesh(cheeseGeometry, cheeseMaterial);
+        cheese.rotation.y = Math.PI / 4;
+        this.foodModel.add(cheese);
+
+        const holeGeometry = new THREE.SphereGeometry(0.08, 16, 16);
+        const holeMaterial = new THREE.MeshPhongMaterial({ color: holeColor });
+
+        const holePositions = [
+            [0.1, 0.05, 0.25],
+            [-0.15, -0.1, 0.2],
+            [0.2, -0.05, 0.15],
+            [-0.1, 0.1, 0.3]
+        ];
+
+        holePositions.forEach(pos => {
+            const hole = new THREE.Mesh(holeGeometry, holeMaterial);
+            hole.position.set(pos[0], pos[1], pos[2]);
+            hole.scale.set(1.2, 1.2, 0.8);
+            this.foodModel.add(hole);
+        });
+
+        this.foodModel.scale.set(1.4, 1.4, 1.4);
+    }
+
+    createBall() {
+        const ballColor = 0xFF1493;
+        const stripeColor = 0xFFFFFF;
+
+        const ballGeometry = new THREE.SphereGeometry(0.4, 32, 32);
+        const ballMaterial = new THREE.MeshPhongMaterial({
+            color: ballColor,
+            shininess: 100
+        });
+        const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+        this.foodModel.add(ball);
+
+        const stripeGeometry = new THREE.TorusGeometry(0.4, 0.05, 16, 100);
+        const stripeMaterial = new THREE.MeshPhongMaterial({ color: stripeColor });
+
+        const stripe1 = new THREE.Mesh(stripeGeometry, stripeMaterial);
+        stripe1.rotation.x = Math.PI / 2;
+        this.foodModel.add(stripe1);
+
+        const stripe2 = new THREE.Mesh(stripeGeometry, stripeMaterial);
+        stripe2.rotation.y = Math.PI / 2;
+        this.foodModel.add(stripe2);
+
+        this.foodModel.scale.set(1.5, 1.5, 1.5);
+    }
+
+    animate() {
+        this.animationId = requestAnimationFrame(() => this.animate());
+
+        if (this.foodModel) {
+            this.foodModel.rotation.x = Math.PI / 4;
+            this.foodModel.rotation.y += 0.02;
+        }
+
+        this.renderer.render(this.scene, this.camera);
+    }
+
+    destroy() {
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+        }
+        if (this.renderer) {
+            this.renderer.dispose();
+        }
+    }
+}
+
+class PetGame {
+    constructor() {
+        this.pet = {
+            name: 'Buddy',
+            hunger: 100,
+            happiness: 100,
+            energy: 100
+        };
+
+        this.dog3D = null;
+        this.food3DModels = [];
+        this.petThumbnails = [];
+        this.currentPetColor = 'brown';
+        this.petCanvas = document.getElementById('petCanvas');
+        this.petMessageElement = document.getElementById('petMessage');
+        this.petNameElement = document.querySelector('.pet-name');
+        this.hungerBar = document.getElementById('hungerBar');
+        this.happinessBar = document.getElementById('happinessBar');
+        this.energyBar = document.getElementById('energyBar');
+        this.hungerValue = document.getElementById('hungerValue');
+        this.happinessValue = document.getElementById('happinessValue');
+        this.energyValue = document.getElementById('energyValue');
+
+        this.init();
+    }
+
+    init() {
+        this.dog3D = new Dog3D('petCanvas', this.currentPetColor);
+        this.initFood3D();
+        this.initPetThumbnails();
+        this.updateUI();
+        this.setupEventListeners();
+        this.startGameLoop();
+        this.showMessage("Hi! I'm Buddy! Take care of me! 🐕");
+    }
+
+    initPetThumbnails() {
+        const colors = ['brown', 'golden', 'black', 'white', 'gray'];
+        colors.forEach((color, index) => {
+            const thumbnail = new Dog3D(`petThumb${index}`, color);
+            this.petThumbnails.push(thumbnail);
+        });
+    }
+
+    initFood3D() {
+        this.food3DModels.push(new Food3D('foodBone', 'bone'));
+        this.food3DModels.push(new Food3D('foodMeat', 'meat'));
+        this.food3DModels.push(new Food3D('foodCookie', 'cookie'));
+        this.food3DModels.push(new Food3D('foodWater', 'water'));
+        this.food3DModels.push(new Food3D('foodFish', 'fish'));
+        this.food3DModels.push(new Food3D('foodApple', 'apple'));
+        this.food3DModels.push(new Food3D('foodCheese', 'cheese'));
+        this.food3DModels.push(new Food3D('foodBall', 'ball'));
+    }
+
+    setupEventListeners() {
+        const foodItems = document.querySelectorAll('.food-item');
+
+        foodItems.forEach(item => {
+            this.setupDragAndDrop(item);
+        });
+
+        document.getElementById('playBtn').addEventListener('click', () => this.playWithPet());
+        document.getElementById('sleepBtn').addEventListener('click', () => this.petSleep());
+        this.petCanvas.addEventListener('click', () => this.petPet());
+
+        this.setupPetSelection();
+    }
+
+    setupPetSelection() {
+        const thumbnails = document.querySelectorAll('.pet-thumbnail');
+
+        thumbnails.forEach(thumbnail => {
+            thumbnail.addEventListener('click', () => {
+                const color = thumbnail.dataset.color;
+                const name = thumbnail.dataset.name;
+                this.switchPet(color, name);
+
+                // Update active state
+                thumbnails.forEach(t => t.classList.remove('active'));
+                thumbnail.classList.add('active');
+            });
+        });
+    }
+
+    switchPet(color, name) {
+        // Destroy old dog
+        if (this.dog3D) {
+            this.dog3D.destroy();
+        }
+
+        // Create new dog with selected color
+        this.currentPetColor = color;
+        this.dog3D = new Dog3D('petCanvas', color);
+        this.pet.name = name;
+        this.petNameElement.textContent = name;
+
+        this.showMessage(`Hi! I'm ${name}! 🐕`);
+    }
+
+    setupDragAndDrop(foodItem) {
+        const dropTarget = this.petCanvas;
+        let dragClone = null;
+        let isDragging = false;
+
+        // Desktop drag events
+        foodItem.addEventListener('dragstart', (e) => {
+            isDragging = true;
+            foodItem.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', foodItem.innerHTML);
+
+            // Store food data
+            this.currentDraggedFood = {
+                hunger: parseInt(foodItem.dataset.hunger),
+                happiness: parseInt(foodItem.dataset.happiness),
+                name: foodItem.dataset.food
+            };
+        });
+
+        foodItem.addEventListener('dragend', (e) => {
+            isDragging = false;
+            foodItem.classList.remove('dragging');
+            this.currentDraggedFood = null;
+        });
+
+        // Make food items draggable
+        foodItem.setAttribute('draggable', 'true');
+
+        // Touch events for mobile
+        foodItem.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            const touch = e.touches[0];
+
+            // Store food data
+            this.currentDraggedFood = {
+                hunger: parseInt(foodItem.dataset.hunger),
+                happiness: parseInt(foodItem.dataset.happiness),
+                name: foodItem.dataset.food
+            };
+
+            // Create visual clone
+            dragClone = foodItem.cloneNode(true);
+            dragClone.classList.add('drag-clone');
+            dragClone.style.left = touch.pageX - 40 + 'px';
+            dragClone.style.top = touch.pageY - 40 + 'px';
+            document.body.appendChild(dragClone);
+
+            foodItem.classList.add('dragging');
+            e.preventDefault();
+        });
+
+        foodItem.addEventListener('touchmove', (e) => {
+            if (!isDragging || !dragClone) return;
+
+            const touch = e.touches[0];
+            dragClone.style.left = touch.pageX - 40 + 'px';
+            dragClone.style.top = touch.pageY - 40 + 'px';
+
+            // Check if over dog canvas
+            const dogRect = dropTarget.getBoundingClientRect();
+            if (touch.pageX >= dogRect.left && touch.pageX <= dogRect.right &&
+                touch.pageY >= dogRect.top && touch.pageY <= dogRect.bottom) {
+                dropTarget.classList.add('drag-over');
+            } else {
+                dropTarget.classList.remove('drag-over');
+            }
+
+            e.preventDefault();
+        });
+
+        foodItem.addEventListener('touchend', (e) => {
+            if (!isDragging) return;
+
+            const touch = e.changedTouches[0];
+            const dogRect = dropTarget.getBoundingClientRect();
+
+            // Check if dropped on dog
+            if (touch.pageX >= dogRect.left && touch.pageX <= dogRect.right &&
+                touch.pageY >= dogRect.top && touch.pageY <= dogRect.bottom) {
+                this.feedPetFromDrag();
+            }
+
+            // Cleanup
+            if (dragClone) {
+                dragClone.remove();
+                dragClone = null;
+            }
+            foodItem.classList.remove('dragging');
+            dropTarget.classList.remove('drag-over');
+            isDragging = false;
+            this.currentDraggedFood = null;
+
+            e.preventDefault();
+        });
+
+        // Desktop drop zone
+        dropTarget.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropTarget.classList.add('drag-over');
+        });
+
+        dropTarget.addEventListener('dragleave', (e) => {
+            dropTarget.classList.remove('drag-over');
+        });
+
+        dropTarget.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropTarget.classList.remove('drag-over');
+            this.feedPetFromDrag();
+        });
+    }
+
+    feedPetFromDrag() {
+        if (!this.currentDraggedFood) return;
+
+        if (this.pet.hunger >= 95) {
+            this.showMessage("I'm too full! 😊");
+            this.animatePet('happy');
+            return;
+        }
+
+        const { hunger, happiness, name } = this.currentDraggedFood;
+
+        this.pet.hunger = Math.min(100, this.pet.hunger + hunger);
+        this.pet.happiness = Math.min(100, this.pet.happiness + happiness);
+
+        const messages = {
+            bone: "Yummy bone! Thanks! 🦴",
+            meat: "This meat is delicious! 🥩",
+            cookie: "I love cookies! 🍪",
+            water: "Refreshing! 💧"
+        };
+
+        this.showMessage(messages[name] || "Nom nom nom!");
+        this.animatePet('happy');
+        this.updateUI();
+    }
+
+    feedPet(foodItem) {
+        const hungerBoost = parseInt(foodItem.dataset.hunger);
+        const happinessBoost = parseInt(foodItem.dataset.happiness);
+        const foodName = foodItem.dataset.food;
+
+        if (this.pet.hunger >= 95) {
+            this.showMessage("I'm too full! 😊");
+            this.animatePet('happy');
+            return;
+        }
+
+        this.pet.hunger = Math.min(100, this.pet.hunger + hungerBoost);
+        this.pet.happiness = Math.min(100, this.pet.happiness + happinessBoost);
+
+        const messages = {
+            bone: "Yummy bone! Thanks! 🦴",
+            meat: "This meat is delicious! 🥩",
+            cookie: "I love cookies! 🍪",
+            water: "Refreshing! 💧"
+        };
+
+        this.showMessage(messages[foodName] || "Nom nom nom!");
+        this.animatePet('happy');
+        this.updateUI();
+    }
+
+    playWithPet() {
+        if (this.pet.energy < 20) {
+            this.showMessage("I'm too tired to play... 😴");
+            this.animatePet('sad');
+            return;
+        }
+
+        this.pet.happiness = Math.min(100, this.pet.happiness + 25);
+        this.pet.energy = Math.max(0, this.pet.energy - 15);
+        this.pet.hunger = Math.max(0, this.pet.hunger - 10);
+
+        this.showMessage("That was fun! Let's play again! 🎾");
+        this.animatePet('happy');
+        this.updateUI();
+    }
+
+    petSleep() {
+        if (this.pet.energy >= 90) {
+            this.showMessage("I'm not sleepy right now! 😊");
+            return;
+        }
+
+        this.pet.energy = Math.min(100, this.pet.energy + 40);
+        this.pet.hunger = Math.max(0, this.pet.hunger - 15);
+
+        this.showMessage("Zzz... That was a good nap! 😴");
+        this.animatePet('happy');
+        this.updateUI();
+    }
+
+    petPet() {
+        this.pet.happiness = Math.min(100, this.pet.happiness + 5);
+
+        const messages = [
+            "I love you! ❤️",
+            "That feels nice! 😊",
+            "More pets please! 🐕",
+            "You're the best! 💕"
+        ];
+
+        this.showMessage(messages[Math.floor(Math.random() * messages.length)]);
+        this.animatePet('happy');
+        this.updateUI();
+    }
+
+    animatePet(emotion) {
+        if (this.dog3D && this.dog3D.isInitialized) {
+            this.dog3D.setEmotion(emotion);
+            if (emotion === 'happy') {
+                this.dog3D.jump();
+            }
+        }
+    }
+
+    showMessage(message) {
+        this.petMessageElement.textContent = message;
+        this.petMessageElement.classList.add('show');
+
+        setTimeout(() => {
+            this.petMessageElement.classList.remove('show');
+        }, 3000);
+    }
+
+    updateUI() {
+        this.hungerBar.style.width = this.pet.hunger + '%';
+        this.happinessBar.style.width = this.pet.happiness + '%';
+        this.energyBar.style.width = this.pet.energy + '%';
+
+        this.hungerValue.textContent = Math.round(this.pet.hunger);
+        this.happinessValue.textContent = Math.round(this.pet.happiness);
+        this.energyValue.textContent = Math.round(this.pet.energy);
+
+        this.hungerBar.classList.toggle('low', this.pet.hunger < 30);
+        this.happinessBar.classList.toggle('low', this.pet.happiness < 30);
+        this.energyBar.classList.toggle('low', this.pet.energy < 30);
+
+        this.checkPetStatus();
+    }
+
+    checkPetStatus() {
+        if (this.pet.hunger < 20) {
+            this.showMessage("I'm so hungry... 😢");
+        } else if (this.pet.happiness < 20) {
+            this.showMessage("I'm feeling sad... 😔");
+        } else if (this.pet.energy < 20) {
+            this.showMessage("I'm so tired... 😴");
+        }
+    }
+
+    startGameLoop() {
+        setInterval(() => {
+            this.pet.hunger = Math.max(0, this.pet.hunger - 0.5);
+            this.pet.happiness = Math.max(0, this.pet.happiness - 0.3);
+            this.pet.energy = Math.max(0, this.pet.energy - 0.2);
+
+            this.updateUI();
+
+            if (this.pet.hunger === 0 || this.pet.happiness === 0 || this.pet.energy === 0) {
+                if (this.pet.hunger === 0) {
+                    this.showMessage("I really need food! 🥺");
+                }
+            }
+        }, 2000);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    new PetGame();
+});
+    </script>
+</body>
+</html>
